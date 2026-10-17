@@ -1,0 +1,1253 @@
+<!-- ... existing code ... -->
+                    <!-- Layer Filter Buttons (Top Overlay inside Canvas area) -->
+                    <div class="bg-slate-900 border-b-2 border-slate-700 px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <span class="font-mono text-[11px] text-slate-400 mr-1">PILIH BAGIAN:</span>
+                            <button onclick="focusArchitectureLayer('all')" id="btn-layer-all" class="px-2.5 py-1 rounded font-mono text-xs font-bold bg-white text-ink border border-ink ring-2 ring-white">Semua Sistem</button>
+                            <button onclick="focusArchitectureLayer('frontend')" id="btn-layer-frontend" class="px-2.5 py-1 rounded font-mono text-xs font-bold bg-frontend text-white border border-ink">1. Layar Aplikasi (Frontend)</button>
+                            <button onclick="focusArchitectureLayer('backend')" id="btn-layer-backend" class="px-2.5 py-1 rounded font-mono text-xs font-bold bg-backend text-ink border border-ink">2. Mesin Pemroses (Backend)</button>
+                            <button onclick="focusArchitectureLayer('database')" id="btn-layer-database" class="px-2.5 py-1 rounded font-mono text-xs font-bold bg-database text-ink border border-ink">3. Gudang Data (Database)</button>
+                            <button onclick="focusArchitectureLayer('devops')" id="btn-layer-devops" class="px-2.5 py-1 rounded font-mono text-xs font-bold bg-devops text-white border border-ink">4. Wadah Server (Docker)</button>
+                        </div>
+                        <button onclick="resetCameraView()" class="font-mono text-[11px] text-slate-300 hover:text-white underline px-1">Reset Kamera</button>
+                    </div>
+
+                    <!-- Step-by-Step Simple Story Bar (Easy Explanation for Anyone) -->
+                    <div class="bg-ink border-b-2 border-slate-700 px-4 py-3 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span id="story-headline" class="font-mono text-xs font-bold text-database uppercase tracking-wide">
+                                CARA KERJA FULLSTACK (ANALOGI SEDERHANA):
+                            </span>
+                            <span class="font-mono text-[11px] text-slate-400 hidden sm:inline">Klik objek berlabel di 3D untuk detail</span>
+                        </div>
+                        <p id="story-explanation" class="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                            Bayangkan sistem web seperti <strong>Restoran Modern</strong>: <strong>(1) Frontend</strong> adalah buku menu &amp; kasir tempat pelanggan memesan, <strong>(2) Backend API</strong> adalah koki yang memasak pesanan, <strong>(3) Redis Cache</strong> adalah etalase makanan siap saji super cepat, dan <strong>(4) Database</strong> adalah gudang penyimpanan bahan baku.
+                        </p>
+                        <!-- 4 Visual Step Pills that light up during packet animation -->
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 font-mono text-[11px]">
+                            <div id="step-box-1" class="bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-slate-300 transition-colors">
+                                <span class="font-bold text-frontend block">1. USER KLIK</span>
+                                <span id="step-desc-1" class="text-[10px] text-slate-400">Layar kirim permintaan</span>
+                            </div>
+                            <div id="step-box-2" class="bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-slate-300 transition-colors">
+                                <span class="font-bold text-backend block">2. PROSES API</span>
+                                <span id="step-desc-2" class="text-[10px] text-slate-400">Server cek keamanan</span>
+                            </div>
+                            <div id="step-box-3" class="bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-slate-300 transition-colors">
+                                <span class="font-bold text-database block">3. AMBIL DATA</span>
+                                <span id="step-desc-3" class="text-[10px] text-slate-400">Cek Redis / Database</span>
+                            </div>
+                            <div id="step-box-4" class="bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-slate-300 transition-colors">
+                                <span class="font-bold text-white block">4. TAMPILKAN</span>
+                                <span id="step-desc-4" class="text-[10px] text-slate-400">Hasil muncul di layar</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Three.js Canvas Container -->
+                    <div id="arch-canvas-container" class="flex-1 bg-dark-grid relative overflow-hidden">
+                        <!-- HTML 2D Floating Labels Container (Synced in real-time with 3D Objects) -->
+                        <div id="labels-overlay" class="absolute inset-0 pointer-events-none z-10 overflow-hidden"></div>
+
+                        <!-- Floating Packet Action Bubble (Follows active moving data packet in 3D) -->
+                        <div id="packet-floating-tag" class="hidden absolute pointer-events-none z-20 -translate-x-1/2 -translate-y-full pb-2 transition-opacity duration-150">
+                            <div class="bg-white text-ink border-2 border-ink rounded-lg px-2.5 py-1 shadow-[3px_3px_0px_#0F172A] font-mono text-[11px] font-bold whitespace-nowrap flex items-center gap-1.5">
+                                <span id="packet-tag-dot" class="w-2.5 h-2.5 rounded-full bg-frontend border border-ink inline-block animate-ping"></span>
+                                <span id="packet-tag-text">Mengirim permintaan...</span>
+                            </div>
+                        </div>
+
+                        <!-- Visual Legend Pill (Top Left of Canvas) -->
+                        <div class="absolute top-3 left-3 z-20 pointer-events-none hidden sm:flex flex-col gap-1 bg-slate-900/95 border-2 border-slate-700 p-2.5 rounded-xl font-mono text-[10px] text-slate-200">
+                            <div class="font-bold text-slate-400 border-b border-slate-700 pb-1 mb-0.5">BENTUK OBJEK 3D:</div>
+                            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-frontend inline-block border border-white"></span><span><strong>Laptop &amp; HP:</strong> Layar Pengguna (Frontend)</span></div>
+                            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-backend inline-block border border-white"></span><span><strong>Gerbang &amp; Lemari Server:</strong> Pemroses (Backend)</span></div>
+                            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-cache inline-block border border-white"></span><span><strong>Chip RAM Merah:</strong> Memori Kilat (Redis)</span></div>
+                            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-database inline-block border border-white"></span><span><strong>Tabung Silinder:</strong> Gudang Data (Database)</span></div>
+                            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-devops inline-block border border-white"></span><span><strong>Kontainer Kargo:</strong> Wadah Server (Docker)</span></div>
+                        </div>
+
+                        <!-- Live Packet Log Overlay (Bottom Right of Canvas) -->
+                        <div class="absolute bottom-3 right-3 z-20 pointer-events-none bg-slate-900/95 border-2 border-slate-700 p-2.5 rounded-xl font-mono text-[11px] w-60 sm:w-72">
+                            <div class="text-slate-400 font-bold border-b border-slate-700 pb-1 mb-1 flex justify-between">
+                                <span>STATUS ALIRAN DATA</span>
+                                <span id="packet-count-badge" class="text-backend">0 paket</span>
+                            </div>
+                            <div id="packet-log" class="space-y-1 text-slate-200 max-h-16 overflow-hidden">
+                                <div>&gt; Geser kanvas untuk memutar 3D</div>
+                                <div>&gt; Klik objek atau tombol di bawah</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Simulation Action Controls Bar (Bottom of Card) -->
+                    <div class="bg-paperAlt text-ink border-t-2 border-ink p-3 sm:p-4">
+                        <div class="font-mono text-xs font-bold uppercase text-slate-700 mb-2 flex items-center justify-between">
+                            <span>Pilih Contoh Kasus Nyata (Lihat Cara Kerja Sistemnya):</span>
+                            <span class="hidden sm:inline text-[11px] text-slate-500">Geser untuk Putar 3D &bull; Scroll untuk Zoom</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                            <button onclick="triggerWorkload('api_cache')" class="flat-btn bg-frontend text-white font-mono text-xs font-bold py-2.5 px-3 rounded-lg flex flex-col items-start text-left">
+                                <span>1. Buka Dashboard Analitik</span>
+                                <span class="text-[10px] font-normal opacity-90">Ambil laporan cepat lewat Redis Cache</span>
+                            </button>
+                            <button onclick="triggerWorkload('ecommerce_tx')" class="flat-btn bg-database text-ink font-mono text-xs font-bold py-2.5 px-3 rounded-lg flex flex-col items-start text-left">
+                                <span>2. Belanja &amp; Bayar (E-Commerce)</span>
+                                <span class="text-[10px] font-normal opacity-90">Kunci stok di Database agar tidak bentrok</span>
+                            </button>
+                            <button onclick="triggerWorkload('websocket_chat')" class="flat-btn bg-backend text-ink font-mono text-xs font-bold py-2.5 px-3 rounded-lg flex flex-col items-start text-left">
+                                <span>3. Kirim Pesan Chat Rahasia</span>
+                                <span class="text-[10px] font-normal opacity-90">Enkripsi pesan &amp; kirim instan (&lt;100ms)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+<!-- ... existing code ... -->
+        /* =========================================================================
+           2. THREE.JS FULLSTACK SYSTEM ARCHITECTURE VISUALIZER (CONCRETE & CLEAR)
+           ========================================================================= */
+        let scene, camera, renderer, archGroup;
+        let isSoftwareFallback = false;
+        let nodesMap = {};
+        let clickableMeshes = [];
+        let labelEntries = [];
+        let tierGroups = {};
+        let activePackets = [];
+        let totalPacketsSent = 0;
+
+        // Camera Orbit / Target State
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let sphericalTarget = { theta: 0.45, phi: 1.15, radius: 22.5 };
+        let sphericalCurrent = { theta: 0.45, phi: 1.15, radius: 22.5 };
+        let lookAtTarget = new THREE.Vector3(0, -0.4, 0);
+        let lookAtCurrent = new THREE.Vector3(0, -0.4, 0);
+
+        // Raycaster for clicking 3D nodes
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        // Pure Flat Palette for Three.js (Matches Tailwind config)
+        const FLAT_COLORS = {
+            frontend: 0x3B82F6,  // Flat Blue
+            backend:  0x10B981,  // Flat Emerald
+            database: 0xF59E0B,  // Flat Amber
+            cache:    0xEF4444,  // Flat Red (Redis)
+            devops:   0x8B5CF6,  // Flat Purple (Docker/Prisma)
+            white:    0xF8FAFC,
+            ink:      0x0F172A,
+            slate:    0x334155
+        };
+
+        // Helper: Create a Flat-Colored Mesh with Bold Brutalist Outlines (EdgesGeometry)
+        function createFlatNodeMesh(geometry, colorHex, outlineColorHex = 0x0F172A, metadata = null) {
+            const material = new THREE.MeshBasicMaterial({ color: colorHex });
+            const mesh = new THREE.Mesh(geometry, material);
+
+            const edgesGeo = new THREE.EdgesGeometry(geometry);
+            const edgesMat = new THREE.LineBasicMaterial({ color: outlineColorHex, linewidth: 2 });
+            const wireframe = new THREE.LineSegments(edgesGeo, edgesMat);
+            mesh.add(wireframe);
+
+            if (metadata) {
+                mesh.userData = metadata;
+                clickableMeshes.push(mesh);
+            }
+            return mesh;
+        }
+
+        // 1. Concrete 3D Model: Open Laptop + Smartphone (Frontend Client Devices)
+        function createMonitorModel(primaryColor, metadata) {
+            const group = new THREE.Group();
+
+            // Laptop Screen Lid (tilted slightly back)
+            const lidGeo = new THREE.BoxGeometry(3.4, 2.0, 0.18);
+            const lidMesh = createFlatNodeMesh(lidGeo, primaryColor, 0xFFFFFF, metadata);
+            lidMesh.position.set(-0.45, 0.45, -0.45);
+            lidMesh.rotation.x = -0.15;
+            group.add(lidMesh);
+
+            // Inner White Website Screen
+            const screenGeo = new THREE.BoxGeometry(3.0, 1.65, 0.2);
+            const screenMesh = createFlatNodeMesh(screenGeo, FLAT_COLORS.white, 0x0F172A, metadata);
+            screenMesh.position.set(-0.45, 0.45, -0.42);
+            screenMesh.rotation.x = -0.15;
+            group.add(screenMesh);
+
+            // Website Navbar & Hero Card blocks on screen (makes it unmistakably a web page)
+            const navGeo = new THREE.BoxGeometry(2.75, 0.28, 0.23);
+            const navMesh = createFlatNodeMesh(navGeo, primaryColor, 0x0F172A, metadata);
+            navMesh.position.set(-0.45, 0.98, -0.49);
+            navMesh.rotation.x = -0.15;
+            group.add(navMesh);
+
+            const cardLeftGeo = new THREE.BoxGeometry(1.25, 0.9, 0.23);
+            const cardLeft = createFlatNodeMesh(cardLeftGeo, 0xDBEAFE, 0x0F172A, metadata);
+            cardLeft.position.set(-1.15, 0.25, -0.38);
+            cardLeft.rotation.x = -0.15;
+            group.add(cardLeft);
+
+            const cardRightGeo = new THREE.BoxGeometry(1.25, 0.9, 0.23);
+            const cardRight = createFlatNodeMesh(cardRightGeo, 0x93C5FD, 0x0F172A, metadata);
+            cardRight.position.set(0.25, 0.25, -0.38);
+            cardRight.rotation.x = -0.15;
+            group.add(cardRight);
+
+            // Laptop Keyboard Base (flat horizontal deck in front of screen)
+            const baseGeo = new THREE.BoxGeometry(3.4, 0.18, 1.9);
+            const baseMesh = createFlatNodeMesh(baseGeo, 0xCBD5E1, 0x0F172A, metadata);
+            baseMesh.position.set(-0.45, -0.58, 0.42);
+            group.add(baseMesh);
+
+            // Dark Keyboard Area
+            const kbGeo = new THREE.BoxGeometry(2.8, 0.2, 0.95);
+            const kbMesh = createFlatNodeMesh(kbGeo, FLAT_COLORS.slate, 0x0F172A, metadata);
+            kbMesh.position.set(-0.45, -0.55, 0.18);
+            group.add(kbMesh);
+
+            // Laptop Trackpad
+            const padGeo = new THREE.BoxGeometry(0.9, 0.2, 0.42);
+            const padMesh = createFlatNodeMesh(padGeo, FLAT_COLORS.white, 0x0F172A, metadata);
+            padMesh.position.set(-0.45, -0.55, 0.98);
+            group.add(padMesh);
+
+            // Companion Smartphone next to Laptop (Mobile Responsive UI)
+            const phoneBodyGeo = new THREE.BoxGeometry(0.95, 1.7, 0.16);
+            const phoneBody = createFlatNodeMesh(phoneBodyGeo, FLAT_COLORS.ink, 0xFFFFFF, metadata);
+            phoneBody.position.set(2.05, 0.15, 0.25);
+            phoneBody.rotation.y = -0.25;
+            group.add(phoneBody);
+
+            const phoneScreenGeo = new THREE.BoxGeometry(0.78, 1.38, 0.19);
+            const phoneScreen = createFlatNodeMesh(phoneScreenGeo, primaryColor, 0xFFFFFF, metadata);
+            phoneScreen.position.set(2.05, 0.15, 0.26);
+            phoneScreen.rotation.y = -0.25;
+            group.add(phoneScreen);
+
+            group.userData = metadata;
+            return group;
+        }
+
+        // 2A. Concrete 3D Model: Security Checkpoint Archway (API Gateway)
+        function createApiGatewayArchModel(primaryColor, metadata) {
+            const group = new THREE.Group();
+
+            // Base Checkpoint Platform
+            const padGeo = new THREE.BoxGeometry(3.4, 0.25, 2.0);
+            const padMesh = createFlatNodeMesh(padGeo, FLAT_COLORS.slate, 0xFFFFFF, metadata);
+            padMesh.position.set(0, -1.0, 0);
+            group.add(padMesh);
+
+            // Left & Right Security Pillars
+            const pillarGeo = new THREE.BoxGeometry(0.65, 2.1, 0.9);
+            const leftPillar = createFlatNodeMesh(pillarGeo, primaryColor, 0x0F172A, metadata);
+            leftPillar.position.set(-1.15, 0.15, 0);
+            group.add(leftPillar);
+
+            const rightPillar = createFlatNodeMesh(pillarGeo, primaryColor, 0x0F172A, metadata);
+            rightPillar.position.set(1.15, 0.15, 0);
+            group.add(rightPillar);
+
+            // Overhead Security Scanner Signboard ("API GATEWAY")
+            const roofGeo = new THREE.BoxGeometry(3.3, 0.65, 1.15);
+            const roofMesh = createFlatNodeMesh(roofGeo, primaryColor, 0xFFFFFF, metadata);
+            roofMesh.position.set(0, 1.35, 0);
+            group.add(roofMesh);
+
+            // White Scanner Banner Strip on Roof
+            const bannerGeo = new THREE.BoxGeometry(2.5, 0.32, 1.2);
+            const bannerMesh = createFlatNodeMesh(bannerGeo, FLAT_COLORS.white, 0x0F172A, metadata);
+            bannerMesh.position.set(0, 1.35, 0);
+            group.add(bannerMesh);
+
+            // Traffic Light / Security Sensor Orb in Center of Gate
+            const sensorGeo = new THREE.BoxGeometry(0.9, 0.25, 0.25);
+            const sensorMesh = createFlatNodeMesh(sensorGeo, 0xFBBF24, 0x0F172A, metadata);
+            sensorMesh.position.set(0, 0.35, 0);
+            group.add(sensorMesh);
+
+            group.userData = metadata;
+            return group;
+        }
+
+        // 2B & 2C. Concrete 3D Model: Tall Data Center Server Cabinet Rack (Backend Services)
+        function createServerRackModel(primaryColor, metadata, bladeCount = 3) {
+            const group = new THREE.Group();
+
+            // Outer Server Cabinet Frame (Dark Slate Chassis)
+            const chassisGeo = new THREE.BoxGeometry(2.9, 2.35, 1.85);
+            const chassisMesh = createFlatNodeMesh(chassisGeo, FLAT_COLORS.slate, 0xFFFFFF, metadata);
+            group.add(chassisMesh);
+
+            // Colored Top Cap on Server Rack
+            const capGeo = new THREE.BoxGeometry(3.0, 0.22, 1.95);
+            const capMesh = createFlatNodeMesh(capGeo, primaryColor, 0x0F172A, metadata);
+            capMesh.position.set(0, 1.22, 0);
+            group.add(capMesh);
+
+            // Individual Slide-out Server Blades inside the Cabinet
+            const bladeHeight = 0.45;
+            const gap = 0.16;
+            const totalHeight = bladeCount * (bladeHeight + gap);
+
+            for (let i = 0; i < bladeCount; i++) {
+                const yPos = (i * (bladeHeight + gap)) - (totalHeight / 2) + (bladeHeight / 2);
+
+                const bladeGeo = new THREE.BoxGeometry(2.5, bladeHeight, 1.92);
+                const bladeMesh = createFlatNodeMesh(bladeGeo, primaryColor, 0x0F172A, metadata);
+                bladeMesh.position.set(0, yPos, 0);
+                group.add(bladeMesh);
+
+                // Blinking Status LED Light Bar (Left)
+                const ledGeo = new THREE.BoxGeometry(0.42, 0.18, 1.98);
+                const ledMesh = createFlatNodeMesh(ledGeo, FLAT_COLORS.white, 0x0F172A, metadata);
+                ledMesh.position.set(-0.82, yPos, 0);
+                group.add(ledMesh);
+
+                // Ventilation Grill Slot (Right)
+                const ventGeo = new THREE.BoxGeometry(0.95, 0.16, 1.98);
+                const ventMesh = createFlatNodeMesh(ventGeo, FLAT_COLORS.ink, 0xFFFFFF, metadata);
+                ventMesh.position.set(0.48, yPos, 0);
+                group.add(ventMesh);
+            }
+
+            group.userData = metadata;
+            return group;
+        }
+
+        // 3B & 3C. Concrete 3D Model: Classic 3-Platter Database Cylinder Silo with Read/Write Spine
+        function createDatabaseStackModel(primaryColor, metadata) {
+            const group = new THREE.Group();
+            const discHeight = 0.56;
+            const gap = 0.18;
+
+            // Central Core Pillar connecting the magnetic platters
+            const coreGeo = new THREE.CylinderGeometry(0.95, 0.95, 2.1, 16);
+            const coreMesh = createFlatNodeMesh(coreGeo, FLAT_COLORS.slate, 0x0F172A, metadata);
+            group.add(coreMesh);
+
+            for (let i = 0; i < 3; i++) {
+                const yPos = (i - 1) * (discHeight + gap);
+                const cylGeo = new THREE.CylinderGeometry(1.55, 1.55, discHeight, 20);
+                const cylMesh = createFlatNodeMesh(cylGeo, primaryColor, 0x0F172A, metadata);
+                cylMesh.position.set(0, yPos, 0);
+                group.add(cylMesh);
+
+                // Front Status Indicator Pill on each Database Platter
+                const pillGeo = new THREE.BoxGeometry(0.75, 0.2, 0.35);
+                const pillMesh = createFlatNodeMesh(pillGeo, FLAT_COLORS.white, 0x0F172A, metadata);
+                pillMesh.position.set(0, yPos, 1.48);
+                group.add(pillMesh);
+            }
+
+            group.userData = metadata;
+            return group;
+        }
+
+        // 3A. Concrete 3D Model: High-Speed RAM Memory Stick / IC Chip (Redis Cache)
+        function createRedisCacheModel(metadata) {
+            const group = new THREE.Group();
+
+            // Main Red Circuit Board Body
+            const boardGeo = new THREE.BoxGeometry(2.6, 0.95, 1.55);
+            const boardMesh = createFlatNodeMesh(boardGeo, FLAT_COLORS.cache, 0xFFFFFF, metadata);
+            group.add(boardMesh);
+
+            // Black Silicon Memory IC Blocks on Top
+            for (let i = -1; i <= 1; i++) {
+                const icGeo = new THREE.BoxGeometry(0.62, 0.32, 1.1);
+                const icMesh = createFlatNodeMesh(icGeo, FLAT_COLORS.ink, 0xFFFFFF, metadata);
+                icMesh.position.set(i * 0.78, 0.55, 0);
+                group.add(icMesh);
+            }
+
+            // Gold Contact Pins along the bottom edge (makes it look like a real RAM/Processor chip)
+            for (let i = -2; i <= 2; i++) {
+                const pinGeo = new THREE.BoxGeometry(0.24, 0.35, 1.75);
+                const pinMesh = createFlatNodeMesh(pinGeo, FLAT_COLORS.database, 0x0F172A, metadata);
+                pinMesh.position.set(i * 0.48, -0.45, 0);
+                group.add(pinMesh);
+            }
+
+            group.userData = metadata;
+            return group;
+        }
+
+        // 4. Concrete 3D Model: Shipping Cargo Container Base (Docker Infrastructure)
+        function createDockerContainerModel(metadata) {
+            const group = new THREE.Group();
+
+            // Main Purple Cargo Container Body
+            const boxGeo = new THREE.BoxGeometry(12.6, 0.85, 6.8);
+            const boxMesh = createFlatNodeMesh(boxGeo, FLAT_COLORS.devops, 0xFFFFFF, metadata);
+            group.add(boxMesh);
+
+            // Corrugated Side Ribs along the container front & back
+            for (let i = -5; i <= 5; i++) {
+                const ribGeo = new THREE.BoxGeometry(0.35, 0.65, 7.0);
+                const ribMesh = createFlatNodeMesh(ribGeo, 0x7C3AED, 0x0F172A, metadata);
+                ribMesh.position.set(i * 1.05, 0, 0);
+                group.add(ribMesh);
+            }
+
+            group.userData = metadata;
+            return group;
+        }
+
+        // Helper: Create Translucent Tier Zone Platform so each layer is visually grouped
+        function createZoneFloorPlate(width, depth, yPos, colorHex) {
+            const group = new THREE.Group();
+            const plateGeo = new THREE.BoxGeometry(width, 0.08, depth);
+            const plateMat = new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.14 });
+            const plateMesh = new THREE.Mesh(plateGeo, plateMat);
+
+            const edgesGeo = new THREE.EdgesGeometry(plateGeo);
+            const edgesMat = new THREE.LineBasicMaterial({ color: colorHex, transparent: true, opacity: 0.65 });
+            plateMesh.add(new THREE.LineSegments(edgesGeo, edgesMat));
+
+            group.add(plateMesh);
+            group.position.set(0, yPos, 0);
+            return group;
+        }
+
+        // Helper: Create Thick 3D Data Pipe Cylinder between two Vector3 points
+        function createPipeLine(p1, p2, colorHex = 0x64748B) {
+            const direction = new THREE.Vector3().subVectors(p2, p1);
+            const length = direction.length();
+            const pipeGeo = new THREE.CylinderGeometry(0.09, 0.09, length, 8);
+            const pipeMat = new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.75 });
+            const pipeMesh = new THREE.Mesh(pipeGeo, pipeMat);
+
+            const midPoint = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+            pipeMesh.position.copy(midPoint);
+            pipeMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.clone().normalize());
+            return pipeMesh;
+        }
+            return mesh;
+        }
+
+        // 1. Concrete 3D Model: Monitor / Laptop Screen for Frontend
+        function createMonitorModel(primaryColor, metadata) {
+            const group = new THREE.Group();
+            // Outer Monitor Bezel
+            const bezelGeo = new THREE.BoxGeometry(3.8, 2.2, 0.3);
+            const bezelMesh = createFlatNodeMesh(bezelGeo, primaryColor, 0xFFFFFF, metadata);
+            group.add(bezelMesh);
+
+            // Inner Screen Display
+            const screenGeo = new THREE.BoxGeometry(3.3, 1.7, 0.34);
+            const screenMesh = createFlatNodeMesh(screenGeo, FLAT_COLORS.white, 0x0F172A, metadata);
+            group.add(screenMesh);
+
+            // UI Header Bar inside screen
+            const headerBarGeo = new THREE.BoxGeometry(3.1, 0.35, 0.38);
+            const headerBar = createFlatNodeMesh(headerBarGeo, primaryColor, 0x0F172A, metadata);
+            headerBar.position.set(0, 0.55, 0);
+            group.add(headerBar);
+
+            // Monitor Stand Neck & Base
+            const neckGeo = new THREE.BoxGeometry(0.6, 0.6, 0.25);
+            const neckMesh = createFlatNodeMesh(neckGeo, FLAT_COLORS.slate, 0xFFFFFF, metadata);
+            neckMesh.position.set(0, -1.3, 0);
+            group.add(neckMesh);
+
+            const baseGeo = new THREE.BoxGeometry(1.8, 0.2, 1.0);
+            const baseMesh = createFlatNodeMesh(baseGeo, primaryColor, 0xFFFFFF, metadata);
+            baseMesh.position.set(0, -1.6, 0.15);
+            group.add(baseMesh);
+
+            group.userData = metadata;
+            return group;
+        }
+
+        // 2. Concrete 3D Model: Stacked Server Blade Rack for Backend API
+        function createServerRackModel(primaryColor, metadata, bladeCount = 3) {
+            const group = new THREE.Group();
+            const bladeHeight = 0.45;
+            const gap = 0.15;
+            const totalHeight = bladeCount * (bladeHeight + gap);
+
+            for (let i = 0; i < bladeCount; i++) {
+                const bladeGeo = new THREE.BoxGeometry(2.8, bladeHeight, 1.8);
+                const bladeMesh = createFlatNodeMesh(bladeGeo, primaryColor, 0x0F172A, metadata);
+                const yPos = (i * (bladeHeight + gap)) - (totalHeight / 2) + (bladeHeight / 2);
+                bladeMesh.position.set(0, yPos, 0);
+
+                // Front status LED strip on each server blade
+                const ledGeo = new THREE.BoxGeometry(0.5, 0.16, 1.86);
+                const ledMesh = createFlatNodeMesh(ledGeo, FLAT_COLORS.white, 0x0F172A, metadata);
+                ledMesh.position.set(-0.9, yPos, 0);
+
+                group.add(bladeMesh);
+                group.add(ledMesh);
+            }
+            group.userData = metadata;
+            return group;
+        }
+
+        // 3. Concrete 3D Model: Classic 3-Platter Database Cylinder Stack
+        function createDatabaseStackModel(primaryColor, metadata) {
+            const group = new THREE.Group();
+            const discHeight = 0.52;
+            const gap = 0.14;
+            for (let i = 0; i < 3; i++) {
+                const cylGeo = new THREE.CylinderGeometry(1.45, 1.45, discHeight, 16);
+                const cylMesh = createFlatNodeMesh(cylGeo, primaryColor, 0x0F172A, metadata);
+                cylMesh.position.set(0, (i - 1) * (discHeight + gap), 0);
+                group.add(cylMesh);
+            }
+            group.userData = metadata;
+            return group;
+        }
+
+        // 4. Concrete 3D Model: Redis Speed Cache Module
+        function createRedisCacheModel(metadata) {
+            const group = new THREE.Group();
+            const coreGeo = new THREE.BoxGeometry(2.1, 1.1, 1.6);
+            const coreMesh = createFlatNodeMesh(coreGeo, FLAT_COLORS.cache, 0xFFFFFF, metadata);
+            group.add(coreMesh);
+
+            const topBadgeGeo = new THREE.BoxGeometry(1.4, 0.25, 1.0);
+            const topBadge = createFlatNodeMesh(topBadgeGeo, FLAT_COLORS.white, 0x0F172A, metadata);
+            topBadge.position.set(0, 0.65, 0);
+            group.add(topBadge);
+
+            group.userData = metadata;
+            return group;
+        }
+
+        // Helper: Register Floating HTML Label attached to a 3D Node
+        function registerNodeLabel(node3D, stepNum, titleText, subtitleText, badgeBgClass, layerKey) {
+            const overlay = document.getElementById('labels-overlay');
+            if (!overlay) return;
+
+            const el = document.createElement('div');
+            el.className = 'absolute pointer-events-auto cursor-pointer select-none transition-transform duration-150 hover:scale-105';
+            el.style.transform = 'translate(-50%, -50%)';
+            el.innerHTML = `
+                <div class="bg-slate-950/95 text-white border-2 border-white rounded-lg px-2.5 py-1 shadow-[3px_3px_0px_#0F172A] flex items-center gap-2">
+                    <span class="${badgeBgClass} text-ink font-mono font-bold text-[10px] px-1.5 py-0.5 rounded border border-ink">${stepNum}</span>
+                    <div class="leading-tight">
+                        <div class="font-mono font-bold text-[11px] whitespace-nowrap">${titleText}</div>
+                        <div class="font-mono text-[9px] text-slate-300 whitespace-nowrap">${subtitleText}</div>
+                    </div>
+                </div>
+            `;
+
+            el.onclick = (e) => {
+                e.stopPropagation();
+                inspectSpecificNode(node3D);
+            };
+
+            overlay.appendChild(el);
+            labelEntries.push({ node: node3D, element: el, layer: layerKey });
+        }
+
+        // Helper: Create 3D Data Pipe Line between two Vector3 points
+        function createPipeLine(p1, p2, colorHex = 0x64748B) {
+            const points = [p1, p2];
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({ color: colorHex, transparent: true, opacity: 0.85 });
+            return new THREE.Line(geometry, material);
+        }
+<!-- ... existing code ... -->
+        function initThreeArchitecture() {
+            const container = document.getElementById('arch-canvas-container');
+            const width = container.clientWidth || 600;
+            const height = container.clientHeight || 480;
+
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
+
+            renderer = createSafeRenderer(width, height);
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+            container.appendChild(renderer.domElement);
+
+            archGroup = new THREE.Group();
+            scene.add(archGroup);
+
+            clickableMeshes = [];
+            labelEntries = [];
+            const overlay = document.getElementById('labels-overlay');
+            if (overlay) overlay.innerHTML = '';
+
+            tierGroups = {
+                frontend: new THREE.Group(),
+                backend: new THREE.Group(),
+                database: new THREE.Group(),
+                devops: new THREE.Group(),
+                pipes: new THREE.Group()
+            };
+
+            archGroup.add(tierGroups.frontend);
+            archGroup.add(tierGroups.backend);
+            archGroup.add(tierGroups.database);
+            archGroup.add(tierGroups.devops);
+            archGroup.add(tierGroups.pipes);
+
+            // Visual Zone Floor Plates so users immediately see the 3 horizontal tiers
+            tierGroups.frontend.add(createZoneFloorPlate(7.4, 3.8, 3.55, FLAT_COLORS.frontend));
+            tierGroups.backend.add(createZoneFloorPlate(12.2, 4.2, -0.75, FLAT_COLORS.backend));
+            tierGroups.database.add(createZoneFloorPlate(12.2, 5.2, -4.85, FLAT_COLORS.database));
+
+            /* -----------------------------------------------------------------
+               BAGIAN 1 (ATAS, Y = +4.3): LAPTOP & HP PENGGUNA (FRONTEND UI)
+               ----------------------------------------------------------------- */
+            const uiNode = createMonitorModel(FLAT_COLORS.frontend, {
+                layer: 'frontend',
+                name: '1. Laptop & HP Pengguna (Frontend UI)',
+                badge: 'TAMPILAN LAYAR',
+                desc: 'Bentuk nyata: Laptop & Smartphone yang digunakan pengunjung. Menampilkan halaman website, tombol beli, grafik, dan ruang obrolan yang dibangun dengan React, Next.js, dan Tailwind CSS.',
+                skills: ['React', 'Next.js', 'TypeScript', 'Tailwind CSS', 'Vite & Zustand', 'Ink TUI']
+            });
+            uiNode.position.set(0, 4.3, 0);
+            tierGroups.frontend.add(uiNode);
+            nodesMap.ui = uiNode;
+            registerNodeLabel(uiNode, '1', 'Laptop & HP Pengguna', 'Website (React / Next.js)', 'bg-frontend text-white', 'frontend');
+
+            /* -----------------------------------------------------------------
+               BAGIAN 2 (TENGAH, Y = +0.4): GERBANG KEAMANAN & LEMARI SERVER
+               ----------------------------------------------------------------- */
+            // Central API Gateway Security Archway
+            const gatewayNode = createApiGatewayArchModel(FLAT_COLORS.backend, {
+                layer: 'backend',
+                name: '2A. Gerbang Keamanan Server (API Gateway)',
+                badge: 'POS PEMERIKSAAN',
+                desc: 'Bentuk nyata: Pos gerbang pemeriksaan. Setiap klik dari laptop pengguna wajib melewati gerbang ini untuk dicek izin loginnya (JWT Auth) dan diatur antreannya (Rate Limit).',
+                skills: ['Express.js', 'JWT Auth', 'Rate Limiting', 'Swagger/OpenAPI', 'GraphQL']
+            });
+            gatewayNode.position.set(0, 0.35, 0.4);
+            tierGroups.backend.add(gatewayNode);
+            nodesMap.gateway = gatewayNode;
+            registerNodeLabel(gatewayNode, '2A', 'Gerbang Keamanan API', 'Pos Cek Login & Antrean', 'bg-backend', 'backend');
+
+            // Left Backend: Core Logic & Python Analytics Server Cabinet
+            const fastApiSvc = createServerRackModel(0x34D399, {
+                layer: 'backend',
+                name: '2B. Lemari Server Transaksi & Grafik (NestJS / FastAPI)',
+                badge: 'MESIN HITUNG & KASIR',
+                desc: 'Bentuk nyata: Lemari kabinet server berisi 3 mesin pemroses. Bertugas menghitung pembayaran belanja E-Commerce dan mengolah laporan grafik analitik otomatis.',
+                skills: ['Node.js', 'NestJS', 'Python', 'FastAPI', 'Headless CMS']
+            }, 3);
+            fastApiSvc.position.set(-4.6, 0.45, -0.4);
+            tierGroups.backend.add(fastApiSvc);
+            nodesMap.fastApiSvc = fastApiSvc;
+            registerNodeLabel(fastApiSvc, '2B', 'Server Kasir & Analitik', 'Mesin FastAPI & NestJS', 'bg-backend', 'backend');
+
+            // Right Backend: Realtime Chat Server Cabinet (Socket.io)
+            const socketSvc = createServerRackModel(0x059669, {
+                layer: 'backend',
+                name: '2C. Lemari Server Chat Kilat (Socket.io)',
+                badge: 'JALUR KILAT <100ms',
+                desc: 'Bentuk nyata: Lemari server khusus pesan instan. Meneruskan pesan terenkripsi antar pengguna dalam waktu kurang dari 0,1 detik tanpa perlu muat ulang halaman.',
+                skills: ['Socket.io', 'Node.js', 'WebSockets', 'E2E Encryption']
+            }, 3);
+            socketSvc.position.set(4.6, 0.45, -0.4);
+            tierGroups.backend.add(socketSvc);
+            nodesMap.socketSvc = socketSvc;
+            registerNodeLabel(socketSvc, '2C', 'Server Obrolan Chat', 'Mesin Socket.io (<100ms)', 'bg-backend', 'backend');
+
+            /* -----------------------------------------------------------------
+               BAGIAN 3 (BAWAH, Y = -3.8): CHIP MEMORI RAM & TABUNG DATABASE
+               ----------------------------------------------------------------- */
+            // Center Bottom: Redis Speed RAM Chip
+            const redisNode = createRedisCacheModel({
+                layer: 'database',
+                name: '3A. Chip Memori Kilat RAM (Redis Cache)',
+                badge: 'MEMORI INSTAN',
+                desc: 'Bentuk nyata: Keping Chip RAM berkecepatan tinggi. Menyimpan data populer yang sering dibuka agar server tidak perlu membongkar gudang database berulang kali.',
+                skills: ['Redis', 'In-Memory Cache', 'Session Store', 'Inventory Sync']
+            });
+            redisNode.position.set(0, -3.4, 1.8);
+            tierGroups.database.add(redisNode);
+            nodesMap.redis = redisNode;
+            registerNodeLabel(redisNode, '3A', 'Chip Memori Kilat (Redis)', 'RAM Cache Super Cepat', 'bg-cache text-white', 'database');
+
+            // Left Bottom: PostgreSQL Storage Cylinder Silo
+            const postgresNode = createDatabaseStackModel(FLAT_COLORS.database, {
+                layer: 'database',
+                name: '3B. Tabung Brankas Data Utama (PostgreSQL)',
+                badge: 'GUDANG TRANSAKSI',
+                desc: 'Bentuk nyata: Tabung piringan penyimpanan data permanen. Menyimpan stok barang & bukti pembayaran dengan sistem kunci baris (Row-Level Locking) agar stok tidak pernah bentrok.',
+                skills: ['PostgreSQL', 'Row-Level Locking', 'Prisma ORM', 'SQLite']
+            });
+            postgresNode.position.set(-4.5, -3.7, -0.8);
+            tierGroups.database.add(postgresNode);
+            nodesMap.postgres = postgresNode;
+            registerNodeLabel(postgresNode, '3B', 'Tabung Database Utama', 'PostgreSQL (Stok & Bayar)', 'bg-database', 'database');
+
+            // Right Bottom: MongoDB Storage Cylinder Silo
+            const mongoNode = createDatabaseStackModel(0xFBBF24, {
+                layer: 'database',
+                name: '3C. Tabung Arsip Pesan Chat (MongoDB)',
+                badge: 'GUDANG RIWAYAT CHAT',
+                desc: 'Bentuk nyata: Tabung arsip dokumen yang menyimpan jutaan riwayat pesan yang sudah dikunci sandi (ciphertext) dan dibagi per ruang obrolan.',
+                skills: ['MongoDB', 'Per-Channel Sharding', 'NoSQL Modeling']
+            });
+            mongoNode.position.set(4.5, -3.7, -0.8);
+            tierGroups.database.add(mongoNode);
+            nodesMap.mongo = mongoNode;
+            registerNodeLabel(mongoNode, '3C', 'Tabung Database Chat', 'MongoDB (Arsip Pesan)', 'bg-database', 'database');
+
+            /* -----------------------------------------------------------------
+               BAGIAN 4 (ALAS WADAH): KONTAINER KARGO DOCKER
+               ----------------------------------------------------------------- */
+            const dockerNode = createDockerContainerModel({
+                layer: 'devops',
+                name: '4. Kontainer Kargo Pengemas Server (Docker)',
+                badge: 'WADAH INFRASTRUKTUR',
+                desc: 'Bentuk nyata: Kontainer kargo baja yang mengemas seluruh mesin server dan database di atasnya agar aman dipindahkan dan dijalankan di komputer server mana saja.',
+                skills: ['Docker', 'Prisma', 'Git', 'Swagger/OpenAPI', 'Cloudinary']
+            });
+            dockerNode.position.set(0, -5.5, 0);
+            tierGroups.devops.add(dockerNode);
+            nodesMap.docker = dockerNode;
+            registerNodeLabel(dockerNode, '4', 'Kontainer Kargo Docker', 'Fondasi Pembungkus Server', 'bg-devops text-white', 'devops');
+
+            /* -----------------------------------------------------------------
+               JALUR PIPA PENGHUBUNG ANTAR KOMPONEN
+               ----------------------------------------------------------------- */
+            const pipeConnections = [
+                [nodesMap.ui.position, nodesMap.gateway.position, 0x60A5FA],
+                [nodesMap.gateway.position, nodesMap.fastApiSvc.position, 0x34D399],
+                [nodesMap.gateway.position, nodesMap.socketSvc.position, 0x34D399],
+                [nodesMap.gateway.position, nodesMap.redis.position, 0xF87171],
+                [nodesMap.fastApiSvc.position, nodesMap.postgres.position, 0xFBBF24],
+                [nodesMap.fastApiSvc.position, nodesMap.redis.position, 0xF87171],
+                [nodesMap.socketSvc.position, nodesMap.mongo.position, 0xFBBF24]
+            ];
+
+            pipeConnections.forEach(([p1, p2, col]) => {
+                tierGroups.pipes.add(createPipeLine(p1, p2, col));
+            });
+
+            setupCanvasEvents(container);
+
+            // Jalankan simulasi pertama secara otomatis
+            setTimeout(() => {
+                triggerWorkload('api_cache');
+            }, 600);
+        }
+
+        /* =========================================================================
+           3. PACKET SIMULATION & SIMPLE STEP-BY-STEP STORY ENGINE
+           ========================================================================= */
+        function highlightStoryStep(activeStepNumber, stepTexts = null) {
+            if (stepTexts) {
+                for (let i = 1; i <= 4; i++) {
+                    const descEl = document.getElementById('step-desc-' + i);
+                    if (descEl && stepTexts[i - 1]) descEl.textContent = stepTexts[i - 1];
+                }
+            }
+            for (let i = 1; i <= 4; i++) {
+                const box = document.getElementById('step-box-' + i);
+                if (!box) continue;
+                if (i === activeStepNumber) {
+                    box.className = 'bg-slate-700 border-2 border-white rounded px-2.5 py-1.5 text-white shadow-[2px_2px_0px_#3B82F6] transition-all';
+                } else {
+                    box.className = 'bg-slate-800 border border-slate-600 rounded px-2.5 py-1.5 text-slate-300 opacity-75 transition-all';
+                }
+            }
+        }
+
+        function setSimpleStoryText(headline, explanation) {
+            const hEl = document.getElementById('story-headline');
+            const pEl = document.getElementById('story-explanation');
+            if (hEl) hEl.textContent = headline;
+            if (pEl) pEl.innerHTML = explanation;
+        }
+
+        function spawnPacket(startVec, endVec, colorHex, speed = 0.022, onArrive = null, labelText = null) {
+            // Concrete Envelope / Data Box Shape
+            const pktGeo = new THREE.BoxGeometry(0.75, 0.5, 0.75);
+            const pktMesh = createFlatNodeMesh(pktGeo, colorHex, 0xFFFFFF);
+            pktMesh.position.copy(startVec);
+            archGroup.add(pktMesh);
+
+            activePackets.push({
+                mesh: pktMesh,
+                start: startVec.clone(),
+                end: endVec.clone(),
+                progress: 0,
+                speed: speed,
+                onArrive: onArrive,
+                labelText: labelText
+            });
+
+            totalPacketsSent++;
+            const badge = document.getElementById('packet-count-badge');
+            if (badge) badge.textContent = `${totalPacketsSent} paket`;
+        }
+        // Workload 1, 2, 3 Triggers with Easy-to-Understand Explanations & Labeled Packets
+        function triggerWorkload(type) {
+            if (!nodesMap.ui) return;
+
+            if (type === 'api_cache') {
+                updateTelemetryHeader('SKENARIO 1: BUKA DASHBOARD', 'WAKTU: 12ms (SANGAT CEPAT)', 'bg-frontend text-white');
+                setSimpleStoryText(
+                    'SKENARIO 1: MEMBUKA LAPORAN GRAFIK (DARI LAPTOP KE CHIP MEMORI REDIS)',
+                    'Perhatikan kotak paket yang bergerak: Pengguna mengklik laporan di <strong>(1) Laptop</strong> &rarr; diperiksa oleh <strong>(2A) Gerbang Keamanan API</strong> &rarr; langsung mengambil data siap saji di <strong>(3A) Chip RAM Redis</strong> tanpa perlu membongkar gudang utama!'
+                );
+                const steps = [
+                    'Klik laporan di Laptop',
+                    'Lewati Gerbang API',
+                    'Ambil kilat di Chip Redis',
+                    'Grafik tampil di Laptop!'
+                ];
+                highlightStoryStep(1, steps);
+                appendPacketLog('1. Laptop meminta data laporan grafik...');
+
+                spawnPacket(nodesMap.ui.position, nodesMap.gateway.position, FLAT_COLORS.frontend, 0.022, () => {
+                    highlightStoryStep(2);
+                    appendPacketLog('2. Gerbang API mengecek izin & menghubungi Chip Redis');
+
+                    spawnPacket(nodesMap.gateway.position, nodesMap.redis.position, FLAT_COLORS.cache, 0.025, () => {
+                        highlightStoryStep(3);
+                        appendPacketLog('3. Data ditemukan di Chip Memori Redis (12ms)');
+                        spawnPacket(nodesMap.redis.position, nodesMap.gateway.position, FLAT_COLORS.backend, 0.025, () => {
+                            highlightStoryStep(4);
+                            spawnPacket(nodesMap.gateway.position, nodesMap.ui.position, FLAT_COLORS.backend, 0.025, () => {
+                                appendPacketLog('4. Grafik selesai ditampilkan ke layar Laptop!');
+                            }, '4. Kirim Grafik ke Laptop!');
+                        }, '3. Ambil Data Instan Redis');
+                    }, '2. Cek Chip Memori Redis');
+
+                    spawnPacket(nodesMap.gateway.position, nodesMap.fastApiSvc.position, FLAT_COLORS.backend, 0.022, () => {
+                        spawnPacket(nodesMap.fastApiSvc.position, nodesMap.postgres.position, FLAT_COLORS.database, 0.022);
+                    });
+                }, '1. Klik Buka Grafik di Laptop');
+            }
+
+            if (type === 'ecommerce_tx') {
+                updateTelemetryHeader('SKENARIO 2: BELANJA E-COMMERCE', '10.000+ TRANSAKSI/HARI', 'bg-database text-ink');
+                setSimpleStoryText(
+                    'SKENARIO 2: BELANJA & BAYAR SERENTAK (KUNCI STOK DI TABUNG DATABASE)',
+                    'Saat pembeli menekan tombol Bayar di <strong>(1) Laptop/HP</strong>, pesanan melewati <strong>(2A) Gerbang API</strong> menuju <strong>(2B) Lemari Server Kasir</strong>, lalu mengunci jumlah barang di <strong>(3B) Tabung Database PostgreSQL</strong> agar stok tidak pernah minus!'
+                );
+                const steps = [
+                    'Pembeli klik tombol Bayar',
+                    'Server Kasir hitung total',
+                    'Tabung Database kunci stok',
+                    'Bukti bayar tampil (<2 dtk)'
+                ];
+                highlightStoryStep(1, steps);
+                appendPacketLog('1. Pembeli menekan tombol Bayar...');
+
+                spawnPacket(nodesMap.ui.position, nodesMap.gateway.position, FLAT_COLORS.frontend, 0.022, () => {
+                    highlightStoryStep(2);
+                    spawnPacket(nodesMap.gateway.position, nodesMap.redis.position, FLAT_COLORS.cache, 0.026);
+                    spawnPacket(nodesMap.gateway.position, nodesMap.fastApiSvc.position, FLAT_COLORS.backend, 0.024, () => {
+                        highlightStoryStep(3);
+                        spawnPacket(nodesMap.fastApiSvc.position, nodesMap.postgres.position, FLAT_COLORS.database, 0.024, () => {
+                            appendPacketLog('3. Tabung PostgreSQL mengunci stok & simpan transaksi');
+                            spawnPacket(nodesMap.postgres.position, nodesMap.gateway.position, FLAT_COLORS.backend, 0.026, () => {
+                                highlightStoryStep(4);
+                                spawnPacket(nodesMap.gateway.position, nodesMap.ui.position, FLAT_COLORS.backend, 0.026, null, '4. Bukti Bayar Sukses!');
+                            }, '3. Stok Aman & Terkunci');
+                        }, '3. Kunci Stok di Tabung SQL');
+                    }, '2. Proses di Server Kasir');
+                }, '1. Klik Bayar Pesanan');
+            }
+
+            if (type === 'websocket_chat') {
+                updateTelemetryHeader('SKENARIO 3: CHAT RAHASIA KILAT', 'LATENSI: 42ms (<100ms)', 'bg-backend text-ink');
+                setSimpleStoryText(
+                    'SKENARIO 3: MENGIRIM PESAN CHAT TERENKRIPSI SECARA INSTAN',
+                    'Pesan dikunci dengan sandi rahasia sejak keluar dari <strong>(1) Laptop/HP</strong>, melesat melewati <strong>(2C) Lemari Server Socket.io</strong>, dan diarsipkan ke <strong>(3C) Tabung Database MongoDB</strong> dalam waktu kurang dari 0,1 detik!'
+                );
+                const steps = [
+                    'Pesan disandi di Laptop/HP',
+                    'Meluncur ke Server Chat',
+                    'Arsipkan di Tabung MongoDB',
+                    'Pesan langsung terkirim!'
+                ];
+                highlightStoryStep(1, steps);
+                appendPacketLog('1. Mengirim pesan terenkripsi (E2EE)...');
+
+                spawnPacket(nodesMap.ui.position, nodesMap.gateway.position, FLAT_COLORS.devops, 0.025, () => {
+                    highlightStoryStep(2);
+                    spawnPacket(nodesMap.gateway.position, nodesMap.socketSvc.position, FLAT_COLORS.backend, 0.026, () => {
+                        highlightStoryStep(3);
+                        spawnPacket(nodesMap.socketSvc.position, nodesMap.mongo.position, FLAT_COLORS.database, 0.025, () => {
+                            appendPacketLog('3. Pesan tersimpan aman di Tabung MongoDB');
+                        }, '3. Simpan Sandi ke MongoDB');
+                        spawnPacket(nodesMap.socketSvc.position, nodesMap.ui.position, FLAT_COLORS.frontend, 0.026, () => {
+                            highlightStoryStep(4);
+                        }, '4. Pesan Tampil (<100ms)');
+                    }, '2. Masuk Server Chat Kilat');
+                }, '1. Kirim Pesan Terenkripsi');
+            }
+        }
+
+        function updateTelemetryHeader(statusText, latencyText, badgeColorClass = 'bg-backend text-ink') {
+            const statusEl = document.getElementById('telemetry-status');
+            const latencyEl = document.getElementById('telemetry-latency');
+            if (statusEl) {
+                statusEl.textContent = statusText;
+                statusEl.className = `${badgeColorClass} px-2 py-0.5 rounded border border-ink font-bold`;
+            }
+            if (latencyEl) {
+                latencyEl.textContent = latencyText;
+            }
+        }
+
+        // Workload 1, 2, 3 Triggers with Easy-to-Understand Explanations
+        function triggerWorkload(type) {
+            if (!nodesMap.ui) return;
+
+            if (type === 'api_cache') {
+                updateTelemetryHeader('SKENARIO 1: BUKA DASHBOARD', 'WAKTU: 12ms (SANGAT CEPAT)', 'bg-frontend text-white');
+                setSimpleStoryText(
+                    'SKENARIO 1: MEMBUKA LAPORAN DASHBOARD ANALITIK (DENGAN REDIS CACHE)',
+                    'Saat manajer membuka grafik laporan di <strong>(1) Layar Web</strong>, permintaan masuk ke <strong>(2A) Pintu Server API</strong>. Karena datanya sudah disiapkan di <strong>(3A) Memori Kilat Redis</strong> dan dihitung oleh <strong>(2B) Python FastAPI</strong>, grafik langsung tampil tanpa menunggu lama!'
+                );
+                const steps = [
+                    'User buka halaman grafik',
+                    'API cek akses login JWT',
+                    'Ambil data kilat di Redis',
+                    'Grafik tampil di layar!'
+                ];
+                highlightStoryStep(1, steps);
+                appendPacketLog('1. Layar meminta data laporan...');
+
+                spawnPacket(nodesMap.ui.position, nodesMap.gateway.position, FLAT_COLORS.frontend, 0.032, () => {
+                    highlightStoryStep(2);
+                    appendPacketLog('2. API Gateway mengecek Redis & FastAPI');
+
+                    spawnPacket(nodesMap.gateway.position, nodesMap.redis.position, FLAT_COLORS.cache, 0.038, () => {
+                        highlightStoryStep(3);
+                        appendPacketLog('3. Data ditemukan di Memori Redis (12ms)');
+                        spawnPacket(nodesMap.redis.position, nodesMap.gateway.position, FLAT_COLORS.backend, 0.038, () => {
+                            highlightStoryStep(4);
+                            spawnPacket(nodesMap.gateway.position, nodesMap.ui.position, FLAT_COLORS.backend, 0.038, () => {
+                                appendPacketLog('4. Grafik selesai ditampilkan ke layar!');
+                            });
+                        });
+                    });
+
+                    spawnPacket(nodesMap.gateway.position, nodesMap.fastApiSvc.position, FLAT_COLORS.backend, 0.03, () => {
+                        spawnPacket(nodesMap.fastApiSvc.position, nodesMap.postgres.position, FLAT_COLORS.database, 0.03, () => {
+                            spawnPacket(nodesMap.postgres.position, nodesMap.fastApiSvc.position, FLAT_COLORS.backend, 0.035);
+                        });
+                    });
+                });
+            }
+
+            if (type === 'ecommerce_tx') {
+                updateTelemetryHeader('SKENARIO 2: BELANJA E-COMMERCE', '10.000+ TRANSAKSI/HARI', 'bg-database text-ink');
+                setSimpleStoryText(
+                    'SKENARIO 2: BELANJA & PEMBAYARAN SERENTAK (ANTI STOK BENTROK)',
+                    'Ketika ribuan pembeli menekan tombol <strong>"Bayar Sekarang"</strong> bersamaan di <strong>(1) Layar Web</strong>, <strong>(2B) Mesin E-Commerce</strong> mengunci baris stok di <strong>(3B) Database PostgreSQL</strong> dan memperbarui <strong>(3A) Redis</strong>. Hasilnya: tidak ada barang yang terjual ganda!'
+                );
+                const steps = [
+                    'Pembeli klik tombol Bayar',
+                    'Server proses pembayaran',
+                    'Database kunci stok barang',
+                    'Bukti bayar sukses (<2 dtk)'
+                ];
+                highlightStoryStep(1, steps);
+                appendPacketLog('1. Pembeli menekan tombol Checkout...');
+
+                for (let i = 0; i < 4; i++) {
+                    setTimeout(() => {
+                        spawnPacket(nodesMap.ui.position, nodesMap.gateway.position, FLAT_COLORS.frontend, 0.035, () => {
+                            if (i === 0) highlightStoryStep(2);
+                            spawnPacket(nodesMap.gateway.position, nodesMap.redis.position, FLAT_COLORS.cache, 0.04);
+                            spawnPacket(nodesMap.gateway.position, nodesMap.fastApiSvc.position, FLAT_COLORS.backend, 0.035, () => {
+                                if (i === 0) highlightStoryStep(3);
+                                spawnPacket(nodesMap.fastApiSvc.position, nodesMap.postgres.position, FLAT_COLORS.database, 0.035, () => {
+                                    if (i === 1) appendPacketLog('3. PostgreSQL mengunci stok & simpan pesanan');
+                                    spawnPacket(nodesMap.postgres.position, nodesMap.gateway.position, FLAT_COLORS.backend, 0.04, () => {
+                                        if (i === 0) highlightStoryStep(4);
+                                        spawnPacket(nodesMap.gateway.position, nodesMap.ui.position, FLAT_COLORS.backend, 0.04);
+                                    });
+                                });
+                            });
+                        });
+                    }, i * 220);
+                }
+            }
+
+            if (type === 'websocket_chat') {
+                updateTelemetryHeader('SKENARIO 3: CHAT RAHASIA KILAT', 'LATENSI: 42ms (<100ms)', 'bg-backend text-ink');
+                setSimpleStoryText(
+                    'SKENARIO 3: MENGIRIM PESAN CHAT TERENKRIPSI SECARA REAL-TIME',
+                    'Pesan dikunci dengan sandi rahasia (Enkripsi E2EE) langsung dari <strong>(1) Layar Pengirim</strong>, lalu diteruskan seketika oleh <strong>(2C) Server Socket.io</strong> dan disimpan di <strong>(3C) Gudang MongoDB</strong> dalam waktu kurang dari 0,1 detik!'
+                );
+                const steps = [
+                    'Pesan dikunci di Layar',
+                    'Masuk jalur cepat Socket.io',
+                    'Simpan sandi di MongoDB',
+                    'Pesan langsung terkirim!'
+                ];
+                highlightStoryStep(1, steps);
+                appendPacketLog('1. Mengirim pesan terenkripsi (E2EE)...');
+
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(() => {
+                        spawnPacket(nodesMap.ui.position, nodesMap.gateway.position, FLAT_COLORS.devops, 0.04, () => {
+                            if (i === 0) highlightStoryStep(2);
+                            spawnPacket(nodesMap.gateway.position, nodesMap.socketSvc.position, FLAT_COLORS.backend, 0.042, () => {
+                                if (i === 0) highlightStoryStep(3);
+                                spawnPacket(nodesMap.socketSvc.position, nodesMap.mongo.position, FLAT_COLORS.database, 0.04, () => {
+                                    if (i === 1) appendPacketLog('3. Pesan tersimpan aman di MongoDB Shard');
+                                });
+                                spawnPacket(nodesMap.socketSvc.position, nodesMap.ui.position, FLAT_COLORS.frontend, 0.042, () => {
+                                    if (i === 0) highlightStoryStep(4);
+                                });
+                            });
+                        });
+                    }, i * 240);
+                }
+            }
+        }
+
+        // Scroll to 3D visualizer and run simulation from Project cards
+        function simulateProjectIn3D(workloadType) {
+            document.getElementById('visualizer').scrollIntoView({ behavior: 'smooth' });
+            setTimeout(() => {
+                triggerWorkload(workloadType);
+            }, 450);
+        }
+
+        // Focus specific architecture layer from buttons or skill cards
+        const LAYER_DETAILS = {
+            all: {
+                title: 'SEMUA SISTEM: GAMBARAN UTUH FULL-STACK',
+                badge: '4 BAGIAN AKTIF',
+                colorClass: 'bg-frontend',
+                desc: 'Menampilkan seluruh bagian aplikasi web dari atas ke bawah: (1) Layar Pengguna, (2) Mesin Server Backend, (3) Gudang Database & Redis, hingga (4) Fondasi Docker.',
+                skills: ['React / Next.js', 'Node / FastAPI / NestJS', 'PostgreSQL / Redis', 'Docker / Prisma'],
+                camY: -0.3,
+                radius: 20
+            },
+            frontend: {
+                title: 'BAGIAN 1: LAYAR APLIKASI (FRONTEND)',
+                badge: 'TAMPILAN PENGGUNA',
+                colorClass: 'bg-frontend',
+                desc: 'Bagian terdepan yang langsung dilihat dan disentuh pengguna. Dibuat agar cepat, rapi di HP maupun laptop, serta dilengkapi fitur pencarian dan filter instan.',
+                skills: ['React', 'TypeScript', 'Tailwind CSS', 'AngularJS', 'Next.js', 'Vite & Zustand'],
+                camY: 3.6,
+                radius: 14
+            },
+            backend: {
+                title: 'BAGIAN 2: MESIN PEMROSES (BACKEND & API)',
+                badge: 'OTAK LOGIKA SERVER',
+                colorClass: 'bg-backend',
+                desc: 'Bagian di balik layar yang bertugas memeriksa keamanan login (JWT), menghitung laporan analitik, memproses pembayaran, dan mengatur lalu lintas pesan chat.',
+                skills: ['Node.js', 'Express.js', 'NestJS', 'Python', 'FastAPI', 'GraphQL', 'Socket.io'],
+                camY: 0.3,
+                radius: 15
+            },
+            database: {
+                title: 'BAGIAN 3: GUDANG DATA & MEMORI KILAT',
+                badge: 'DATABASE & CACHE',
+                colorClass: 'bg-database',
+                desc: 'Tempat penyimpanan seluruh data penting secara permanen (PostgreSQL, MongoDB, SQLite) ditambah memori kilat (Redis) agar pencarian data berlangsung sekejap.',
+                skills: ['PostgreSQL', 'Redis', 'MongoDB', 'SQLite', 'Row-Level Locking', 'Sharding'],
+                camY: -3.5,
+                radius: 15
+            },
+            devops: {
+                title: 'BAGIAN 4: WADAH SERVER & INFRASTRUKTUR',
+                badge: 'DOCKER & PERKAKAS',
+                colorClass: 'bg-devops',
+                desc: 'Fondasi yang mengemas seluruh program ke dalam kotak kontainer (Docker) dan mendokumentasikan API secara otomatis (Swagger) agar tim mudah bekerja sama.',
+                skills: ['Docker', 'Prisma', 'Git', 'Swagger/OpenAPI', 'Cloudinary Pipeline'],
+                camY: -4.2,
+                radius: 18
+            }
+        };
+
+        function focusArchitectureLayer(layerKey) {
+            const info = LAYER_DETAILS[layerKey] || LAYER_DETAILS.all;
+
+            updateInspectorHUD(info.title, info.badge, info.desc, info.skills, info.colorClass);
+
+            lookAtTarget.set(0, info.camY, 0);
+            sphericalTarget.radius = info.radius;
+
+            // Highlight matching floating 3D labels
+            labelEntries.forEach(entry => {
+                if (layerKey === 'all' || entry.layer === layerKey) {
+                    entry.element.style.opacity = '1';
+                } else {
+                    entry.element.style.opacity = '0.35';
+                }
+            });
+
+            ['all', 'frontend', 'backend', 'database', 'devops'].forEach(k => {
+                const btn = document.getElementById('btn-layer-' + k);
+                if (!btn) return;
+                if (k === layerKey) {
+                    btn.classList.add('ring-2', 'ring-white');
+                } else {
+                    btn.classList.remove('ring-2', 'ring-white');
+                }
+            });
+
+            if (layerKey === 'frontend' || layerKey === 'backend') triggerWorkload('api_cache');
+            if (layerKey === 'database') triggerWorkload('ecommerce_tx');
+        }
+<!-- ... existing code ... -->
+        function inspectSpecificNode(targetNode) {
+            if (!targetNode || !targetNode.userData) return;
+            const data = targetNode.userData;
+
+            targetNode.scale.set(1.18, 1.18, 1.18);
+            setTimeout(() => { targetNode.scale.set(1, 1, 1); }, 240);
+
+            const dotMap = {
+                frontend: 'bg-frontend',
+                backend: 'bg-backend',
+                database: 'bg-database',
+                devops: 'bg-devops'
+            };
+
+            updateInspectorHUD(
+                data.name,
+                data.badge || 'KOMPONEN AKTIF',
+                data.desc,
+                data.skills || [],
+                dotMap[data.layer] || 'bg-frontend'
+            );
+
+            setSimpleStoryText(
+                `DETAIL KOMPONEN: ${data.name.toUpperCase()}`,
+                data.desc
+            );
+
+            appendPacketLog(`Melihat detail: ${data.name}`);
+        }
+
+        function handleCanvasClick(event, container) {
+            const rect = container.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(clickableMeshes, false);
+
+            if (intersects.length > 0) {
+                const hitMesh = intersects[0].object;
+                const rootNode = hitMesh.parent && hitMesh.parent.userData && hitMesh.parent.userData.name ? hitMesh.parent : hitMesh;
+                inspectSpecificNode(rootNode);
+            }
+        }
+
+        // Project 3D Node coordinates to 2D HTML Floating Pin Labels every frame
+        const tempLabelVec = new THREE.Vector3();
+        function updateFloatingLabels() {
+            const container = document.getElementById('arch-canvas-container');
+            if (!container || !camera) return;
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            for (let i = 0; i < labelEntries.length; i++) {
+                const item = labelEntries[i];
+                item.node.getWorldPosition(tempLabelVec);
+                // Offset label slightly above the 3D object
+                tempLabelVec.y += 1.45;
+                tempLabelVec.project(camera);
+
+                if (tempLabelVec.z > 1) {
+                    item.element.style.display = 'none';
+                } else {
+                    item.element.style.display = 'block';
+                    const x = (tempLabelVec.x * 0.5 + 0.5) * width;
+                    const y = (-(tempLabelVec.y * 0.5) + 0.5) * height;
+                    item.element.style.left = `${x}px`;
+                    item.element.style.top = `${y}px`;
+                }
+            }
+
+            // Update floating callout bubble following the primary labeled packet
+            const packetTag = document.getElementById('packet-floating-tag');
+            const packetTagText = document.getElementById('packet-tag-text');
+            if (packetTag && packetTagText) {
+                const labeledPkt = activePackets.find(p => p.labelText);
+                if (labeledPkt) {
+                    tempLabelVec.copy(labeledPkt.mesh.position);
+                    tempLabelVec.y += 0.65;
+                    tempLabelVec.project(camera);
+                    if (tempLabelVec.z <= 1) {
+                        packetTag.classList.remove('hidden');
+                        const px = (tempLabelVec.x * 0.5 + 0.5) * width;
+                        const py = (-(tempLabelVec.y * 0.5) + 0.5) * height;
+                        packetTag.style.left = `${px}px`;
+                        packetTag.style.top = `${py}px`;
+                        packetTagText.textContent = labeledPkt.labelText;
+                    } else {
+                        packetTag.classList.add('hidden');
+                    }
+                } else {
+                    packetTag.classList.add('hidden');
+                }
+            }
+        }
+
+        /* =========================================================================
+           5. MAIN ANIMATION LOOP
+           ========================================================================= */
+        let clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const elapsedTime = clock.getElapsedTime();
+
+            // Gentle idle sway when user is not dragging so labels stay easy to read
+            if (!isDragging) {
+                sphericalTarget.theta = 0.52 + Math.sin(elapsedTime * 0.45) * 0.22;
+            }
+
+            // Smooth interpolation for spherical camera coordinates
+            sphericalCurrent.theta += (sphericalTarget.theta - sphericalCurrent.theta) * 0.08;
+            sphericalCurrent.phi += (sphericalTarget.phi - sphericalCurrent.phi) * 0.08;
+            sphericalCurrent.radius += (sphericalTarget.radius - sphericalCurrent.radius) * 0.08;
+            lookAtCurrent.lerp(lookAtTarget, 0.08);
+
+            camera.position.x = lookAtCurrent.x + sphericalCurrent.radius * Math.sin(sphericalCurrent.phi) * Math.sin(sphericalCurrent.theta);
+            camera.position.y = lookAtCurrent.y + sphericalCurrent.radius * Math.cos(sphericalCurrent.phi);
+            camera.position.z = lookAtCurrent.z + sphericalCurrent.radius * Math.sin(sphericalCurrent.phi) * Math.cos(sphericalCurrent.theta);
+            camera.lookAt(lookAtCurrent);
+
+            // Subtle floating motion for Redis Cache
+            if (nodesMap.redis) {
+                nodesMap.redis.position.y = -3.5 + Math.sin(elapsedTime * 2.5) * 0.12;
+            }
+
+            // Update active 3D data packets
+            for (let i = activePackets.length - 1; i >= 0; i--) {
+                const pkt = activePackets[i];
+                pkt.progress += pkt.speed;
+                if (pkt.progress >= 1) {
+                    archGroup.remove(pkt.mesh);
+                    pkt.mesh.geometry.dispose();
+                    pkt.mesh.material.dispose();
+                    const callback = pkt.onArrive;
+                    activePackets.splice(i, 1);
+                    if (callback) callback();
+                } else {
+                    pkt.mesh.position.lerpVectors(pkt.start, pkt.end, pkt.progress);
+                    pkt.mesh.rotation.x += 0.1;
+                    pkt.mesh.rotation.y += 0.1;
+                }
+            }
+
+            renderer.render(scene, camera);
+            updateFloatingLabels();
+        }
+
+        // Start Three.js on Window Load
+        window.onload = function () {
+            initThreeArchitecture();
+            animate();
+        };
+    </script>
+</body>
+</html>
